@@ -6,16 +6,59 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #define BUFSIZE 100
 #define SADDR struct sockaddr
 #define SIZE sizeof(struct sockaddr_in)
 
 int main(int argc, char *argv[]) {
+  char address[20];
+  struct sockaddr_in servaddr;
+  int buf_size;
+  int port;
+  while (1) {
+    int current_optind = optind ? optind : 1;
+
+    static struct option options[] = {{"port", required_argument, 0, 0},
+                                      {"address", required_argument, 0, 0},
+                                      {"buf_size", required_argument, 0, 0},
+                                      {0, 0, 0, 0}};
+
+    int option_index = 0;
+    int c = getopt_long(argc, argv, "", options, &option_index);
+
+    if (c == -1)
+      break;
+
+    switch (c) {
+    case 0: {
+      switch (option_index) {
+      case 0:
+        port = atoi(optarg);
+        break;
+      case 1:
+        strcpy(address, optarg);
+        break;
+      case 2:
+        buf_size = atoi(optarg);
+        break;
+      default:
+        printf("Index %d is out of options\n", option_index);
+      }
+    } break;
+
+    case '?':
+      printf("Unknown argument\n");
+      break;
+    default:
+      fprintf(stderr, "getopt returned character code 0%o?\n", c);
+    }
+  }
+
   int fd;
   int nread;
-  char buf[BUFSIZE];
-  struct sockaddr_in servaddr;
+  char buf[buf_size];
   if (argc < 3) {
     printf("Too few arguments \n");
     exit(1);
@@ -29,12 +72,12 @@ int main(int argc, char *argv[]) {
   memset(&servaddr, 0, SIZE);
   servaddr.sin_family = AF_INET;
 
-  if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0) {
+  if (inet_pton(AF_INET, address, &servaddr.sin_addr) <= 0) {
     perror("bad address");
     exit(1);
   }
 
-  servaddr.sin_port = htons(atoi(argv[2]));
+  servaddr.sin_port = htons(port);
 
   if (connect(fd, (SADDR *)&servaddr, SIZE) < 0) {
     perror("connect");

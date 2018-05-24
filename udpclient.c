@@ -16,9 +16,47 @@
 
 int main(int argc, char **argv) {
   int sockfd, n;
+  int buf_size;
+  char address[20];
   char sendline[BUFSIZE], recvline[BUFSIZE + 1];
   struct sockaddr_in servaddr;
   struct sockaddr_in cliaddr;
+     while (1) {
+    int current_optind = optind ? optind : 1;
+
+    static struct option options[] = {{"port", required_argument, 0, 0},
+                                      {"tnum", required_argument, 0, 0},
+                                      {0, 0, 0, 0}};
+
+    int option_index = 0;
+    int c = getopt_long(argc, argv, "", options, &option_index);
+
+    if (c == -1)
+      break;
+
+    switch (c) {
+    case 0: {
+      switch (option_index) {
+      case 0:
+        port = atoi(optarg);
+        break;
+      case 1:
+        tnum = atoi(optarg);
+        break;
+      default:
+        printf("Index %d is out of options\n", option_index);
+      }
+    } break;
+
+    case '?':
+      printf("Unknown argument\n");
+      break;
+    default:
+      fprintf(stderr, "getopt returned character code 0%o?\n", c);
+    }
+  }
+
+
 
   if (argc != 2) {
     printf("usage: client <IPaddress of server>\n");
